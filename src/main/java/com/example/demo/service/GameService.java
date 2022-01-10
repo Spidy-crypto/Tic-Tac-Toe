@@ -59,6 +59,7 @@ public class GameService {
         }
     }
 
+    //need to solve completed issue.
     public BoardDto loadBoard(Long userId) {
         BoardDto bd = new BoardDto();
         Game game = gameRepository.findByUser1IdUserId(userId).stream().findFirst().orElse(null);
