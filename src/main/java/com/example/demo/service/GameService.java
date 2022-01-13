@@ -7,7 +7,6 @@ import com.example.demo.dto.MovesDto;
 import com.example.demo.model.entity.Game;
 import com.example.demo.repository.GameRepository;
 import com.example.demo.repository.MoveRepository;
-import com.example.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,8 +18,6 @@ public class GameService {
     @Autowired
     private GameRepository gameRepository;
 
-    @Autowired
-    private UserRepository userRepository;
 
     @Autowired
     private MoveRepository moveRepository;
@@ -32,12 +29,8 @@ public class GameService {
         try {
             gameDto.setStatus("Pending");
             Game game = converter.gameDtoTOEntity(gameDto);
-            int count = gameRepository.findActiveGame(gameDto.getUser1Id());
-            if(count == 0){
-                gameRepository.save(game);
-                return converter.entityToGameDto(game);
-            }
-            return new GameDto();
+            gameRepository.save(game);
+            return converter.entityToGameDto(game);
         }catch (Exception e){
             System.out.println(e.getMessage());
             return null;
@@ -51,7 +44,7 @@ public class GameService {
                 return false;
             }
             game.setStatus("Playing");
-            game.setUser2Id(userRepository.findById(userId).orElse(null));
+            game.setUser2Id(userId);
             gameRepository.save(game);
             return true;
         }catch (Exception e){
@@ -59,21 +52,22 @@ public class GameService {
         }
     }
 
-    //need to solve completed issue.
-    public BoardDto loadBoard(Long userId) {
+    public BoardDto loadBoard(Long gameId) {
         BoardDto bd = new BoardDto();
-        Game game = gameRepository.findByUser1IdUserId(userId).stream().findFirst().orElse(null);
+        Game game = gameRepository.findById(gameId).orElse(null);
         if(game == null){
-            game = gameRepository.findByUser2IdUserId(userId).stream().findFirst().orElse(null);
-        }
-        if(game == null){
-            return bd;
+            return null;
         }
         bd.setSize(game.getSize());
+        bd.setStatus(game.getStatus());
         bd.setGameId(game.getGameId());
-        System.out.println(moveRepository);
         List<MovesDto> movesDtoList = converter.movesToDtos(moveRepository.findByGameGameId(game.getGameId()));
         bd.setMovesDtoList(movesDtoList);
         return bd;
     }
+
+    public List<Game> getGames(Long userId){
+        return gameRepository.findByUserId(userId);
+    }
+
 }

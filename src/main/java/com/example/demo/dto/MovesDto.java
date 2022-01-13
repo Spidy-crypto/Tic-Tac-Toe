@@ -11,5 +11,6 @@ public class MovesDto {
     private char symbol;
     private boolean result;
     private boolean error;
+    private Long winnerId;
 
 }

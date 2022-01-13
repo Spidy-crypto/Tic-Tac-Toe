@@ -2,9 +2,12 @@ package com.example.demo.service;
 
 import com.example.demo.converter.Converter;
 import com.example.demo.dto.MovesDto;
+import com.example.demo.model.entity.Game;
 import com.example.demo.model.entity.Move;
+import com.example.demo.repository.GameRepository;
 import com.example.demo.repository.MoveRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -17,10 +20,21 @@ public class MoveService {
     private MoveRepository moveRepository;
 
     @Autowired
+    private GameRepository gameRepository;
+
+    @Autowired
     private Converter converter;
 
+    @Autowired
+    SimpMessagingTemplate template;
+
     public boolean checkStatus(List<Character> trio){
-        return trio.get(0) == trio.get(1) && trio.get(1) == trio.get(2);
+        for(int i=1;i< trio.size();i++){
+            if(trio.get(i) != trio.get(i - 1)){
+                return false;
+            }
+        }
+        return true;
     }
 
     public boolean checkWinner(List<List<Character>> board, int size){
@@ -61,7 +75,9 @@ public class MoveService {
     public MovesDto addMove(Move move){
 
         MovesDto movesDto = new MovesDto();
-        if(validateMove(move)){
+        Game game = gameRepository.findById(move.getGame().getGameId()).orElse(null);
+
+        if(validateMove(move,game)){
             try{
                 List<Move> moves = getMoves(move.getGame().getGameId());
                 MovesDto moveDto = converter.entityToMoveDto(move);
@@ -84,8 +100,22 @@ public class MoveService {
                 setBoard(move, board, size);
 
                 if(checkWinner(board,size)){
+                    game.setStatus("Completed");
+
                     moveDto.setResult(true);
+                    if(game.getWinnerId() == null){
+                        game.setWinnerId(move.getUserId());
+                    }
+                    moveDto.setWinnerId(game.getWinnerId());
+                    template.convertAndSend("/topic/message/" + game.getGameId(), move.getUserId() + " Wins the game!");
+                }else{
+                    if(moves.size() == game.getSize() * game.getSize() - 1){
+                        game.setStatus("Completed");
+                        template.convertAndSend("/topic/message/" + game.getGameId(), "Draw!!");
+
+                    }
                 }
+                gameRepository.save(game);
                 moveRepository.save(move);
                 moveDto.setError(false);
                 return moveDto;
@@ -99,8 +129,19 @@ public class MoveService {
 
 
 
-    public boolean validateMove(Move move){
+    public boolean validateMove(Move move, Game game){
+        if(game.getStatus() == "Completed"){
+            return false;
+        }
         List<Move> moves = getMoves(move.getGame().getGameId());
+        if(moves.size() == 0){
+            if(move.getUserId() != game.getUser1Id()){
+                return false;
+            }
+        }
+        else if(move.getUserId() == moves.get(moves.size()-1).getUserId()){
+            return false;
+        }
         return moves.stream().filter(m -> m.getLocation() == move.getLocation()).count() == 0;
     }
 

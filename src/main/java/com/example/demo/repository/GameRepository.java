@@ -7,10 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface GameRepository extends JpaRepository<Game, Long> {
-    List<Game> findByUser1IdUserId(Long userId);
-    List<Game> findByUser2IdUserId(Long userId);
 
-    @Query(value = "SELECT COUNT(*) FROM GAME WHERE USER1ID_USER_ID = ?1 AND STATUS != 'Completed'", nativeQuery = true)
-    int findActiveGame(Long userId);
+    @Query(value = "SELECT * FROM GAME WHERE USER1ID = ?1 OR USER2ID = ?1", nativeQuery = true)
+    List<Game> findByUserId(Long userId);
 
 }

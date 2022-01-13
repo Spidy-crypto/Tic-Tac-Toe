@@ -7,6 +7,7 @@ import com.example.demo.service.MoveService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,25 +26,21 @@ public class MoveController {
     SimpMessagingTemplate template;
 
     @RequestMapping(method = RequestMethod.POST, value = "/addMove")
-    public boolean addMove(@RequestBody MovesDto moveDto){
+    public MovesDto addMove(@RequestBody MovesDto moveDto){
         try {
             Move move = converter.moveDtoToEntity(moveDto);
             moveDto = moveService.addMove(move);
 
             if(!moveDto.isError()){
-                template.convertAndSend("/topic/move", moveDto);
+                template.convertAndSend("/topic/move/" + move.getGame().getGameId() , moveDto);
             }
             if(moveDto.isResult()){
-                return true;
+                return moveDto;
             }
         }catch (Exception e){
             System.out.println(e.getMessage());
         }
-        return false;
-    }
-
-    @SendTo("/topic/move")
-    public MovesDto message(MovesDto moveDto){
+        moveDto.setError(true);
         return moveDto;
     }
 

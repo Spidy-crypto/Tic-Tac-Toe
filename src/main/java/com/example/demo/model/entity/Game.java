@@ -17,11 +17,12 @@ public class Game {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long gameId;
 
-    @ManyToOne
-    private User user1Id;
-    @ManyToOne
-    private User user2Id;
+    private Long user1Id;
+
+    private Long user2Id;
 
     private String status;
     private int size;
+
+    private Long winnerId;
 }

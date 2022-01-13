@@ -16,9 +16,7 @@ public class Move {
     @JoinColumn(name = "gameId", referencedColumnName = "gameId")
     private Game game;
 
-    @ManyToOne
-    @JoinColumn(name = "userId", referencedColumnName = "userId")
-    private User user;
+    private Long userId;
 
     @Column(nullable = false)
     private int location;
