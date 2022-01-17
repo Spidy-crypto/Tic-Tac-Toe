@@ -8,6 +8,7 @@ import com.example.demo.model.entity.Game;
 import com.example.demo.repository.GameRepository;
 import com.example.demo.repository.MoveRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,6 +25,9 @@ public class GameService {
 
     @Autowired
     private Converter converter;
+
+    @Autowired
+    SimpMessagingTemplate template;
 
     public GameDto createGame(GameDto gameDto) {
         try {
@@ -46,6 +50,7 @@ public class GameService {
             game.setStatus("Playing");
             game.setUser2Id(userId);
             gameRepository.save(game);
+            template.convertAndSend("/topic/user2/" + gameId, true);
             return true;
         }catch (Exception e){
             return false;
@@ -70,4 +75,19 @@ public class GameService {
         return gameRepository.findByUserId(userId);
     }
 
+    public boolean terminateGame(Long gameId) {
+        try{
+            Game game = gameRepository.findById(gameId).orElse(null);
+            if(game != null && !game.getStatus().equals("Completed")){
+                game.setStatus("Terminated");
+                gameRepository.save(game);
+                template.convertAndSend("/topic/message/" + game.getGameId(), "Game is Terminated.");
+
+                return true;
+            }
+        }catch (Exception e){
+            System.out.println(e);
+        }
+        return false;
+    }
 }

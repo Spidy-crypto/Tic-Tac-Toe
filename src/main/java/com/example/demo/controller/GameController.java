@@ -41,6 +41,11 @@ public class GameController {
          return converter.entitiesToGameDtos(gameService.getGames(userId));
     }
 
+    @RequestMapping(method = RequestMethod.PUT, value = "/terminateGame/{gameId}")
+    public boolean terminateGame(@PathVariable Long gameId){
+        return gameService.terminateGame(gameId);
+    }
+
     @GetMapping("game/{gameId}")
     public BoardDto loadBoard(@PathVariable Long gameId){
         return gameService.loadBoard(gameId);

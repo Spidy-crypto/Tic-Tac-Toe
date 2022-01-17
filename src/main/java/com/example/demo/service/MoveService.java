@@ -117,6 +117,12 @@ public class MoveService {
                 }
                 gameRepository.save(game);
                 moveRepository.save(move);
+                if(move.getUserId() == 1){
+                    template.convertAndSend("/topic/message/" + game.getGameId(), "User2's turn");
+                }else {
+                    template.convertAndSend("/topic/message/" + game.getGameId(), "User1's turn");
+
+                }
                 moveDto.setError(false);
                 return moveDto;
             }catch (Exception e){
@@ -130,16 +136,16 @@ public class MoveService {
 
 
     public boolean validateMove(Move move, Game game){
-        if(game.getStatus() == "Completed"){
+        if(game.getStatus().equals("Completed")){
             return false;
         }
         List<Move> moves = getMoves(move.getGame().getGameId());
         if(moves.size() == 0){
-            if(move.getUserId() != game.getUser1Id()){
+            if(!move.getUserId().equals(game.getUser1Id())){
                 return false;
             }
         }
-        else if(move.getUserId() == moves.get(moves.size()-1).getUserId()){
+        else if(move.getUserId().equals(moves.get(moves.size() - 1).getUserId())){
             return false;
         }
         return moves.stream().filter(m -> m.getLocation() == move.getLocation()).count() == 0;
